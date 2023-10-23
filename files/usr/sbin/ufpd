@@ -1,0 +1,301 @@
+#!/usr/bin/env ucode
+'use strict';
+import * as uloop from "uloop";
+import * as libubus from "ubus";
+import { readfile, glob, basename } from "fs";
+push(REQUIRE_SEARCH_PATH, "/usr/share/ufp/*.uc");
+
+uloop.init();
+let ubus = libubus.connect();
+let fingerprints = {};
+let devices = {};
+let gc_timer;
+let weight = {};
+
+let global = {
+	uloop: uloop,
+	ubus: ubus,
+	weight: weight,
+	devices: devices,
+	fingerprints: fingerprints,
+	plugins: [],
+
+	load_fingerprint_json: function(file) {
+		let data = json(readfile(file));
+		fingerprints = data;
+	},
+
+	add_weight: function(data) {
+		for (let entry in data)
+			weight[entry] = data[entry];
+	},
+
+	device_refresh: function(mac) {
+		mac = lc(mac);
+		let dev = devices[mac];
+		if (!dev)
+			return;
+
+		dev.timestamp = time();
+	},
+
+	device_add_data: function(mac, line) {
+		mac = lc(mac);
+		let dev = devices[mac];
+		if (!dev)
+			dev = devices[mac] = {
+				data: {},
+				meta: {},
+				timestamp: time()
+			};
+
+		if (substr(line, 0, 1) == "%") {
+			line = substr(line, 1);
+			let meta = split(line, "|", 3);
+			if (!meta[2])
+				return;
+
+			dev.meta[meta[0]] ??= {};
+			if (!weight[meta[1]])
+				return;
+
+			dev.meta[meta[0]][meta[1]] = meta[2];
+			return;
+		}
+
+		let fp = split(line, "|", 2);
+		if (!fp[1])
+			return;
+
+		dev.data[fp[0]] = line;
+	}
+};
+
+function load_plugins()
+{
+	let plugins = glob("/usr/share/ufp/plugin_*.uc");
+	for (let name in plugins) {
+		name = substr(basename(name), 0, -3);
+		try {
+			let plugin = require(name);
+			plugin.init(global);
+			push(global.plugins, plugin);
+		} catch (e) {
+			warn(`Failed to load plugin ${name}: ${e}\n${e.stacktrace[0].context}\n`);
+		}
+	}
+}
+
+function refresh_plugins()
+{
+	for (let plugin in global.plugins) {
+		if (!plugin.refresh)
+			continue;
+
+		try {
+			plugin.refresh();
+		} catch (e) {
+			warn(`Failed to refresh plugin: ${e}\n${e.stacktrace[0].context}\n`);
+		}
+	}
+}
+
+function device_gc()
+{
+	gc_timer.set(60 * 60 * 1000);
+	let timeout = time() - 60 * 60 * 24;
+
+	for (let mac in devices) {
+		if (devices[mac].timestamp < timeout)
+			delete devices[mac];
+	}
+}
+
+// returns: { "<meta>": { "<val>": [ <weight>, [ <fingerprints> ] ] } }
+function __device_match_list(mac)
+{
+	let dev = devices[mac];
+	if (!dev || !length(dev))
+		return null;
+
+	let ret = {};
+	let data = dev.data;
+	for (let fp in data) {
+		let match_devs = fingerprints[data[fp]];
+		if (!match_devs)
+			continue;
+
+		for (let match_dev in match_devs) {
+			for (let meta in match_dev) {
+				ret[meta] ??= {};
+				let cur = ret[meta];
+				let val = match_dev[meta];
+				cur[val] ??= [ 0.0, []];
+				cur = cur[val];
+				cur[0] += weight[fp] ?? 1.0;
+				push(cur[1], fp);
+			}
+		}
+	}
+
+	for (let meta in dev.meta) {
+		ret[meta] ??= {};
+		let ret_cur = ret[meta];
+		let meta_cur = dev.meta[meta];
+		for (let data in meta_cur) {
+			let val = meta_cur[data];
+			ret_cur[val] ??= [ 0.0, []];
+			let cur = ret_cur[val];
+			cur[0] += weight[data];
+			push(cur[1], data);
+		}
+	}
+
+	return ret;
+}
+
+function device_match_list(mac)
+{
+	let match = __device_match_list(mac);
+
+	for (let meta in match) {
+		let match_meta = match[meta];
+		let meta_list = keys(match_meta);
+		sort(meta_list, (a, b) => match_meta[b][0] - match_meta[a][0]);
+		match[meta] = map(meta_list, (key) => [ key, match_meta[key][0], match_meta[key][1] ]);
+	}
+
+	return match;
+}
+
+global.ubus_object = {
+	load_fingerprints: {
+		args: {
+			file: "",
+		},
+		call: function(req) {
+			let file = req.args.file;
+			if (!file)
+				return libubus.STATUS_INVALID_ARGUMENT;
+
+			try {
+				global.load_fingerprint_json(file);
+			} catch (e) {
+				warn(`Exception in ubus function: ${e}\n${e.stacktrace[0].context}, file=${file}\n`);
+				return libubus.STATUS_INVALID_ARGUMENT;
+			}
+
+			return 0;
+		}
+	},
+
+	device_get_data: {
+		args: {
+			macaddr: "",
+		},
+		call: function(req) {
+			let mac = req.args.macaddr;
+
+			refresh_plugins();
+
+			if (!mac)
+				return devices;
+
+			let dev = devices[mac];
+			if (!dev)
+				return libubus.STATUS_NOT_FOUND;
+
+			return dev;
+		}
+	},
+
+	device_add_data: {
+		args: {
+			macaddr: "",
+			data: []
+		},
+		call: function(req) {
+			let mac = req.args.macaddr;
+			let data = req.args.data;
+			if (!mac || !data)
+				return libubus.STATUS_INVALID_ARGUMENT;
+
+			for (let line in data)
+				global.device_add_data(mac, line);
+
+			return 0;
+		}
+	},
+
+	device_fingerprint: {
+		args: {
+			macaddr: ""
+		},
+		call: function(req) {
+			refresh_plugins();
+
+			let mac_list = req.args.macaddr ? [ req.args.macaddr ] : keys(devices);
+			let ret = {};
+
+			for (let mac in mac_list) {
+				let match_list = device_match_list(mac);
+				if (!match_list)
+					return libubus.STATUS_NOT_FOUND;
+
+				let cur_ret = {
+					weight: {},
+				};
+				ret[mac] = cur_ret;
+
+				for (let meta in match_list) {
+					let match_meta = match_list[meta];
+
+					if (length(match_meta) < 1)
+						continue;
+
+					match_meta = match_meta[0];
+
+					cur_ret[meta] = match_meta[0];
+					cur_ret.weight[meta] = match_meta[1];
+				}
+			}
+
+			return req.args.macaddr ? ret[req.args.macaddr] : ret;
+		}
+	},
+
+	device_fingerprint_list: {
+		args: {
+			macaddr: ""
+		},
+		call: function(req) {
+			refresh_plugins();
+
+			let mac_list = req.args.macaddr ? [ req.args.macaddr ] : keys(devices);
+			let ret = {};
+
+			for (let mac in mac_list) {
+				let match_list = device_match_list(mac);
+				if (!match_list)
+					return libubus.STATUS_NOT_FOUND;
+
+				let cur_ret = {};
+				ret[mac] = cur_ret;
+
+				for (let meta in match_list)
+					cur_ret[meta] = match_list[meta];
+			}
+
+			return req.args.macaddr ? ret[req.args.macaddr] : ret;
+		}
+	},
+};
+
+try {
+	global.load_fingerprint_json("/usr/share/ufp/devices.json");
+} catch (e) {
+}
+load_plugins();
+ubus.publish("fingerprint", global.ubus_object);
+gc_timer = uloop.timer(1000, device_gc);
+uloop.run();
