@@ -67,7 +67,7 @@ function parse_macaddr(addr)
 }
 
 function dhcp_cb(msg) {
-	if (msg.type != "discover")
+	if (msg.type != "discover" && msg.type != "request")
 		return;
 
 	let packet = msg.data.packet;
