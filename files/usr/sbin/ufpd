@@ -120,34 +120,67 @@ function __device_match_list(mac)
 
 	let ret = {};
 	let data = dev.data;
+	let match_devs = [];
+
 	for (let fp in data) {
-		let match_devs = fingerprints[data[fp]];
-		if (!match_devs)
+		let match = fingerprints[data[fp]];
+		if (!match)
 			continue;
 
-		for (let match_dev in match_devs) {
-			for (let meta in match_dev) {
-				ret[meta] ??= {};
-				let cur = ret[meta];
-				let val = match_dev[meta];
-				cur[val] ??= [ 0.0, []];
-				cur = cur[val];
-				cur[0] += weight[fp] ?? 1.0;
-				push(cur[1], fp);
-			}
-		}
+		for (let match_cur in match)
+			push(match_devs, [ match_cur, weight[fp], fp ]);
 	}
 
 	for (let meta in dev.meta) {
-		ret[meta] ??= {};
-		let ret_cur = ret[meta];
 		let meta_cur = dev.meta[meta];
-		for (let data in meta_cur) {
-			let val = meta_cur[data];
-			ret_cur[val] ??= [ 0.0, []];
-			let cur = ret_cur[val];
-			cur[0] += weight[data];
-			push(cur[1], data);
+		for (let type in meta_cur) {
+			let match = {};
+			match[meta] = meta_cur[type];
+			push(match_devs, [ match, weight[type], type ]);
+		}
+	}
+
+	for (let i = 0; i < length(match_devs); i++) {
+		let match = match_devs[i];
+		let match_data = match[0];
+		let match_weight = match[1];
+		let match_fp = [ match[2] ];
+		let meta_entry = {};
+
+		for (let j = 0; j < length(match_devs); j++) {
+			if (j == i)
+				continue;
+
+			let cur = match_devs[j];
+			let cur_data = cur[0];
+			for (let key in cur_data) {
+				if (lc(match_data[key]) == lc(cur_data[key])) {
+					match_weight += cur[1];
+					push(match_fp, cur[2]);
+					break;
+				}
+			}
+		}
+
+		for (let key in match_data) {
+			let val = match_data[key];
+			ret[key] ??= {};
+			let ret_key = ret[key];
+
+			ret_key[val] ??= [ 0.0, {} ];
+			let ret_val = ret_key[val];
+
+			ret_val[0] += match_weight;
+			for (let fp in match_fp)
+				ret_val[1][fp]++;
+		}
+	}
+
+	for (let key in ret) {
+		let ret_key = ret[key];
+		for (let val in ret_key) {
+			let ret_val = ret_key[val];
+			ret_val[1] = keys(ret_val[1]);
 		}
 	}
 
