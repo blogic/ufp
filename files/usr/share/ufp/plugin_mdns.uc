@@ -114,11 +114,13 @@ function handle_homekit(txt)
 function handle_googlecast_model(txt)
 {
 	let ret = [];
-	let model = txt.model ?? txt.rpMd;
+	let model = txt.model ?? txt.rpMd ?? txt.md;
 	if (model)
 		push(ret, `%device|mdns_model_string|${model}`);
 	if (txt.fn)
 		push(ret, `%device_name|mdns_device_name|${txt.fn}`);
+	if (txt.rs == 'TV')
+		push(ret, "%class|mdns_tv|TV");
 	return ret;
 }
 
@@ -152,6 +154,17 @@ function handle_scanner(txt)
 	return ret;
 }
 
+function handle_hue(txt, name)
+{
+	let ret = [];
+	push(ret, `%vendor|mdns_service|Philips`);
+	push(ret, `%device|mdns_service|Hue`);
+	if (name)
+		push(ret, `%device_name|mdns_implicit_device_name|${name}`);
+
+	return ret;
+}
+
 const service_handler = {
 	"_airplay._tcp": handle_apple,
 	"_companion-link._tcp": handle_apple,
@@ -161,6 +174,7 @@ const service_handler = {
 	"_scanner._tcp": handle_scanner,
 	"_hap._tcp": handle_homekit,
 	"_hap._udp": handle_homekit,
+	"_hue._tcp": handle_hue,
 };
 
 function arp_resolve(list)
@@ -261,6 +275,8 @@ function init(gl) {
 		mdns_device_name: 10.0,
 		mdns_implicit_device_name: 5.0,
 		mdns_vendor_model_string: 10.0,
+		mdns_service: 10.0,
+		mdns_tv: 5.0,
 		mdns_model_string: 5.0,
 		mdns_printer: 5.0,
 		mdns_scanner: 1.0,
