@@ -47,7 +47,7 @@
 		]
 
 	},
-	"vendor=Apple,class=TV": {
+	"vendor=Apple|class=TV": {
 		"Apple TV": [
 			"apple_model|AppleTV1,1",
 			"apple_model|AppleTV2,1",
@@ -60,7 +60,7 @@
 			"apple_model|AppleTV14,1"
 		]
 	},
-	"vendor=Apple,class=Watch": {
+	"vendor=Apple|class=Watch": {
 		"Apple Watch": [
 			"apple_model|Watch1,1",
 			"apple_model|Watch1,2",
@@ -108,7 +108,7 @@
 			"wifi4|probe:,|assoc:0,1,33,36,48,45,221(0017f20a),221(0050f202),htcap:812c,htagg:1e,htmcs:000000ff,txpow:1000"
 		]
 	},
-	"vendor=Apple,class=Speaker": {
+	"vendor=Apple|class=Speaker": {
 		"HomePod": [
 			"apple_model|AudioAccessory1,1",
 			"apple_model|AudioAccessory1,2"
@@ -117,7 +117,7 @@
 			"apple_model|AudioAccessory5,1"
 		]
 	},
-	"vendor=Apple,class=Tablet": {
+	"vendor=Apple|class=Tablet": {
 		"iPad": [
 			"apple_model|iPad1,1",
 			"apple_model|iPad2,1",
