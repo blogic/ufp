@@ -148,6 +148,12 @@ function ie_fingerprint_str(id) {
 	return sprintf("%d", id);
 }
 
+let vendor_ie_filter = [
+	0x0050f2, // Microsoft WNN
+	0x506f9a, // WBA
+	0x8cfdf0, // Qualcom
+];
+
 function ie_fingerprint(data, mode) {
 	let caps = {
 		tags: [],
@@ -194,7 +200,7 @@ function ie_fingerprint(data, mode) {
 		}
 		if (ie[0] > 0x200) {
 			let vendor = ie[0] >> 8;
-			if (vendor != 0x0050f2)
+			if (!(vendor in vendor_ie_filter))
 				caps.vendor_list[sprintf("%06x", vendor)] = 1;
 		}
 		if (!skip)
