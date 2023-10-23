@@ -165,6 +165,15 @@ function handle_hue(txt, name)
 	return ret;
 }
 
+function handle_fritzbox(txt)
+{
+	let ret = [];
+	push(ret, `%vendor|mdns_service|AVM`);
+	push(ret, `%device|mdns_service|FRITZ!Box`);
+
+	return ret;
+}
+
 const service_handler = {
 	"_airplay._tcp": handle_apple,
 	"_companion-link._tcp": handle_apple,
@@ -175,6 +184,7 @@ const service_handler = {
 	"_hap._tcp": handle_homekit,
 	"_hap._udp": handle_homekit,
 	"_hue._tcp": handle_hue,
+	"_fbox._tcp": handle_fritzbox,
 };
 
 function arp_resolve(list)
