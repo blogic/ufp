@@ -9,7 +9,10 @@ function parse_category(str) {
 	let data = {};
 	for (let item in items) {
 		item = split(item, "=", 2);
-		data[item[0]] = item[1];
+		if (item[1] == "%")
+			data["%val"] = item[0];
+		else
+			data[item[0]] = item[1];
 	}
 
 	return data;
@@ -17,12 +20,15 @@ function parse_category(str) {
 
 function get_device(meta, name)
 {
-	let dev = {
-		device: name
-	};
+	let dev = {};
 
-	for (let type in meta)
+	dev[meta["%val"] ?? "device"] = name;
+	for (let type in meta) {
+		if (substr(type, 0, 1) == "%")
+			continue;
+
 		dev[type] = meta[type];
+	}
 
 	return dev;
 }
