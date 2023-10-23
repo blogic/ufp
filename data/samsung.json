@@ -7,8 +7,7 @@
 	"vendor=Samsung|class=phone": {
 		"Galaxy S21 Ultra 5G": [
 			"wifi4|probe:0,1,45,127,191,255(2),221(00904c04),221(0050f208),221(00101802),221(506f9a16),htcap:006f,htagg:1b,htmcs:0000ffff,vhtcap:0f917876,vhtrxmcs:0000fffa,vhttxmcs:2000fffa,extcap:04004880014000400021|assoc:0,1,33,36,48,54,59,45,127,191,221(0000f022),221(00904c04),221(00101802),221(0050f202),htcap:006f,htagg:1b,htmcs:0000ffff,vhtcap:0f917876,vhtrxmcs:0000fffa,vhttxmcs:2000fffa,txpow:12f9,extcap:04000000010000400020",
-			"wifi6|0,1,33,36,48,54,59,45,127,191,255(35),221(0000f022),221(00904c04),221(00101802),221(0050f202),htcap:006f,htagg:1b,htmcs:0000ffff,vhtcap:0f917876,vhtrxmcs:0000fffa,vhttxmcs:2000fffa,txpow:12f9,extcap:04000000010000400020,hemac:800000080803,hephy:000c0c089e017d800230",
-			"wifi-vendor-oui-0000f0|1"
+			"wifi6|0,1,33,36,48,54,59,45,127,191,255(35),221(0000f022),221(00904c04),221(00101802),221(0050f202),htcap:006f,htagg:1b,htmcs:0000ffff,vhtcap:0f917876,vhtrxmcs:0000fffa,vhttxmcs:2000fffa,txpow:12f9,extcap:04000000010000400020,hemac:800000080803,hephy:000c0c089e017d800230"
 		]
 	},
 	"vendor=%": {
