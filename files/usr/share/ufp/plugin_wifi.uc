@@ -153,6 +153,7 @@ let vendor_ie_filter = [
 	0x506f9a, // WBA
 	0x8cfdf0, // Qualcom
 	0x001018, // Broadcom
+	0x000c43, // Ralink
 ];
 
 function ie_fingerprint(data, mode) {
