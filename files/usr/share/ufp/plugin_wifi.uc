@@ -152,6 +152,7 @@ let vendor_ie_filter = [
 	0x0050f2, // Microsoft WNN
 	0x506f9a, // WBA
 	0x8cfdf0, // Qualcom
+	0x001018, // Broadcom
 ];
 
 function ie_fingerprint(data, mode) {
