@@ -229,7 +229,8 @@ global.ubus_object = {
 
 	fingerprint: {
 		args: {
-			macaddr: ""
+			macaddr: "",
+			weight: false
 		},
 		call: function(req) {
 			refresh_plugins();
@@ -242,9 +243,9 @@ global.ubus_object = {
 				if (!match_list)
 					return libubus.STATUS_NOT_FOUND;
 
-				let cur_ret = {
-					weight: {},
-				};
+				let cur_ret = { };
+				if (req.args.weight)
+					cur_ret.weight = {};
 				ret[mac] = cur_ret;
 
 				for (let meta in match_list) {
@@ -256,7 +257,8 @@ global.ubus_object = {
 					match_meta = match_meta[0];
 
 					cur_ret[meta] = match_meta[0];
-					cur_ret.weight[meta] = match_meta[1];
+					if (req.args.weight)
+						cur_ret.weight[meta] = match_meta[1];
 				}
 			}
 
