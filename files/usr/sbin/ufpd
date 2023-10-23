@@ -189,7 +189,7 @@ global.ubus_object = {
 		}
 	},
 
-	device_get_data: {
+	get_data: {
 		args: {
 			macaddr: "",
 		},
@@ -209,7 +209,7 @@ global.ubus_object = {
 		}
 	},
 
-	device_add_data: {
+	add_data: {
 		args: {
 			macaddr: "",
 			data: []
@@ -227,7 +227,7 @@ global.ubus_object = {
 		}
 	},
 
-	device_fingerprint: {
+	fingerprint: {
 		args: {
 			macaddr: ""
 		},
@@ -264,7 +264,7 @@ global.ubus_object = {
 		}
 	},
 
-	device_fingerprint_list: {
+	list: {
 		args: {
 			macaddr: ""
 		},

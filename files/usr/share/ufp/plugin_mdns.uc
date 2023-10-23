@@ -185,6 +185,7 @@ const service_handler = {
 	"_hap._udp": handle_homekit,
 	"_hue._tcp": handle_hue,
 	"_fbox._tcp": handle_fritzbox,
+	"_avmnexus._tcp": handle_fritzbox,
 };
 
 function arp_resolve(list)
