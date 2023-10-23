@@ -10,9 +10,6 @@ const ie_tags = {
 	__EXT_START: 0x100,
 	HE_CAP: 0x100 | 35,
 	VENDOR_WPS: 0x0050f204,
-	VENDOR_APPLE: 0x0017f200,
-	VENDOR_APPLE_IE: 0x0017f20a,
-	VENDOR_SAMSUNG: 0x0000f000,
 };
 
 const ie_parser_proto = {
@@ -153,7 +150,8 @@ function ie_fingerprint_str(id) {
 
 function ie_fingerprint(data, mode) {
 	let caps = {
-		tags: []
+		tags: [],
+		vendor_list: {}
 	};
 	let parser = ie_parser(data);
 
@@ -194,13 +192,10 @@ function ie_fingerprint(data, mode) {
 				unpack.le32(substr(val, 7, 4));
 			break;
 		}
-		switch (ie[0] & 0xffffff00) {
-		case ie_tags.VENDOR_APPLE:
-			caps.vendor = "apple";
-			break;
-		case ie_tags.VENDOR_SAMSUNG:
-			caps.vendor = "samsung";
-			break;
+		if (ie[0] > 0x200) {
+			let vendor = ie[0] >> 8;
+			if (vendor != 0x0050f2)
+				caps.vendor_list[sprintf("%06x", vendor)] = 1;
 		}
 		if (!skip)
 			push(caps.tags, ie[0]);
@@ -212,12 +207,8 @@ function ie_fingerprint(data, mode) {
 		if (mode == "wifi6" && !caps.hemac)
 			return null;
 		break;
-	case "wifi-vendor":
-		return caps.vendor;
-	case "wifi-vendor-data":
-		if (!caps.vendor || !caps.vendor_data)
-			return null;
-		return `${caps.vendor}:${caps.vendor_data}`;
+	case "wifi-vendor-oui":
+		return caps.vendor_list;
 	default:
 		break;
 	}
@@ -231,7 +222,7 @@ function ie_fingerprint(data, mode) {
 		));
 }
 
-function fingerprint(mode, ies) {
+function fingerprint(mac, mode, ies) {
 	switch (mode) {
 	case "wifi4":
 		let assoc = ie_fingerprint(ies.assoc_ie, mode);
@@ -242,18 +233,25 @@ function fingerprint(mode, ies) {
 		if (!probe)
 			break;
 
-		return `${mode}|probe:${probe}|assoc:${assoc}`;
+		global.device_add_data(mac, `${mode}|probe:${probe}|assoc:${assoc}`);
+		break;
+	case "wifi-vendor-oui":
+		let list = ie_fingerprint(ies.assoc_ie, mode);
+		for (let oui in list)
+			global.device_add_data(mac, `${mode}-${oui}|1`);
+		break;
 	case "wifi6":
 	default:
 		let val = ie_fingerprint(ies.assoc_ie, mode);
 		if (!val)
 			break;
 
-		return `${mode}|${val}`;
+		global.device_add_data(mac, `${mode}|${val}`);
+		break;
 	}
 }
 
-const fingerprint_modes = [ "wifi4", "wifi6", "wifi-vendor", "wifi-vendor-data" ];
+const fingerprint_modes = [ "wifi4", "wifi6", "wifi-vendor-oui" ];
 
 function client_refresh(ap, mac, prev_cache)
 {
@@ -265,11 +263,8 @@ function client_refresh(ap, mac, prev_cache)
 	if (ies.probe_ie)
 		ies.probe_ie = b64dec(ies.probe_ie);
 
-	for (let mode in fingerprint_modes) {
-		let val = fingerprint(mode, ies);
-		if (val)
-			global.device_add_data(mac, val);
-	}
+	for (let mode in fingerprint_modes)
+		fingerprint(mac, mode, ies);
 
 	return ies;
 }

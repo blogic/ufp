@@ -209,9 +209,11 @@
 		],
 		"iOS device": [
 			"dhcp_req|1,121,3,6,15,108,114,119,252"
-		],
-		"Unknown Device": [
-			"wifi-vendor|apple"
+		]
+	},
+	"vendor=%": {
+		"Apple": [
+			"wifi-vendor-oui-0017f2|1"
 		]
 	}
 }
