@@ -243,8 +243,10 @@ function fingerprint(mac, mode, ies) {
 		break;
 	case "wifi-vendor-oui":
 		let list = ie_fingerprint(ies.assoc_ie, mode);
-		for (let oui in list)
+		for (let oui in list) {
+			global.weight[`${mode}-${oui}`] = 2.0;
 			global.device_add_data(mac, `${mode}-${oui}|1`);
+		}
 		break;
 	case "wifi6":
 	default:
