@@ -86,7 +86,7 @@ function dhcp_cb(msg) {
 		let id = data[0];
 		switch (id) {
 		case 12:
-			typestr = "dhcp_hostname";
+			typestr = "%device_name|dhcp_device_name";
 			data = parse_string(data);
 			break;
 		case 55:
@@ -109,6 +109,7 @@ function init(gl) {
 	ubus = gl.ubus;
 
 	gl.weight.dhcp_req = 1.1;
+	gl.weight.dhcp_device_name = 5.0;
 	sub = ubus.subscriber(dhcp_cb);
 	listener = ubus.listener("ubus.object.add", (event, msg) => {
 		if (msg.path == "dhcpsnoop")
