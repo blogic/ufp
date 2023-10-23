@@ -1,0 +1,10 @@
+{
+	"vendor=Sony": {
+		"Playstation 5": [
+			"dhcp_vendorid|PS5"
+		],
+		"Playstation 4": [
+			"dhcp_vendorid|PS4"
+		]
+	}
+}
