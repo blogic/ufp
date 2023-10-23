@@ -1,5 +1,5 @@
 {
-	"vendor=Sony": {
+	"vendor=Sony|class=gaming": {
 		"Playstation 5": [
 			"dhcp_vendorid|PS5"
 		],
