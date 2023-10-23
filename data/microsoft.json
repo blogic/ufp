@@ -1,5 +1,5 @@
 {
-	"os=Microsoft": {
+	"os_vendor=Microsoft|os=%": {
 		"Windows 10": [
 			"dhcp_vendorid|MSFT 5.0"
 		],

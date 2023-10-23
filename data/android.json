@@ -1,5 +1,5 @@
 {
-	"os=Google Android": {
+	"os_vendor=Google|os=%": {
 		"Android 13": [
 			"dhcp_vendorid|android-dhcp-13"
 		],
