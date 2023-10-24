@@ -12,6 +12,19 @@ let devices = {};
 let gc_timer;
 let weight = {};
 
+function get_weight(type) {
+	let w = weight[type];
+	if (w)
+		return w;
+	type = split(type, "-");
+	if (length(type) < 2)
+		return null;
+	pop(type);
+	type = join("-", type);
+
+	return weight[type];
+}
+
 let global = {
 	uloop: uloop,
 	ubus: ubus,
@@ -24,6 +37,8 @@ let global = {
 		let data = json(readfile(file));
 		fingerprints = data;
 	},
+
+	get_weight: get_weight,
 
 	add_weight: function(data) {
 		for (let entry in data)
@@ -59,7 +74,7 @@ let global = {
 				return;
 
 			dev.meta[meta[0]] ??= {};
-			if (!weight[meta[1]])
+			if (!get_weight(meta[1]))
 				return;
 
 			dev.meta[meta[0]][meta[1]] = meta[2];
@@ -131,7 +146,7 @@ function __device_match_list(mac)
 			continue;
 
 		for (let match_cur in match)
-			push(match_devs, [ match_cur, weight[fp], fp ]);
+			push(match_devs, [ match_cur, global.get_weight(fp), fp ]);
 	}
 
 	for (let meta in dev.meta) {
@@ -139,7 +154,7 @@ function __device_match_list(mac)
 		for (let type in meta_cur) {
 			let match = {};
 			match[meta] = meta_cur[type];
-			push(match_devs, [ match, weight[type], type ]);
+			push(match_devs, [ match, global.get_weight(type), type ]);
 		}
 	}
 
