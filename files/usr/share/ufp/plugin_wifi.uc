@@ -233,15 +233,14 @@ function ie_fingerprint(data, mode) {
 function fingerprint(mac, mode, ies) {
 	switch (mode) {
 	case "wifi4":
+		if (!ies.assoc_ie)
+			break;
+
 		let assoc = ie_fingerprint(ies.assoc_ie, mode);
 		if (!assoc)
 			break;
 
-		let probe = ie_fingerprint(ies.probe_ie);
-		if (!probe)
-			break;
-
-		global.device_add_data(mac, `${mode}|probe:${probe}|assoc:${assoc}`);
+		global.device_add_data(mac, `${mode}|${assoc}`);
 		break;
 	case "wifi-vendor-oui":
 		let list = ie_fingerprint(ies.assoc_ie, mode);
