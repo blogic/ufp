@@ -10,7 +10,9 @@ let ubus = libubus.connect();
 let fingerprints = {};
 let devices = {};
 let gc_timer;
-let weight = {};
+let weight = {
+	"mac-oui": 3.0,
+};
 
 function get_weight(type) {
 	let w = weight[type];
