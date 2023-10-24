@@ -1,7 +1,8 @@
 {
 	"vendor=%": {
 		"Apple": [
-			"wifi-vendor-oui-0017f2|1"
+			"wifi-vendor-oui-0017f2|1",
+			"mac-oui-f4d488|1"
 		]
 	},
 	"vendor=Apple": {
