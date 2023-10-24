@@ -42,12 +42,15 @@ let global = {
 	device_add_data: function(mac, line) {
 		mac = lc(mac);
 		let dev = devices[mac];
-		if (!dev)
+		if (!dev) {
 			dev = devices[mac] = {
 				data: {},
 				meta: {},
 				timestamp: time()
 			};
+			let oui = "mac-oui-" + join("", slice(split(mac, ":"), 0, 3));
+			dev.data[oui] = `${oui}|1`;
+		}
 
 		if (substr(line, 0, 1) == "%") {
 			line = substr(line, 1);
