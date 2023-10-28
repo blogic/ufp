@@ -6,7 +6,6 @@
 #
 
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ufp
 PKG_VERSION:=1
@@ -14,29 +13,35 @@ PKG_VERSION:=1
 PKG_LICENSE:=GPL-2.0
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
-PKG_BUILD_DEPENDS:=bpf-headers
+HOST_BUILD_DEPENDS:=ucode/host libubox/host
+PKG_BUILD_DEPENDS:=bpf-headers ufp/host
 
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/cmake.mk
 
 define Package/ufp
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Device fingerprinting daemon
-  DEPENDS:=+ucode +ucode-mod-fs
-endef
-
-define Build/Compile
-	ucode ./scripts/convert-devices.uc ./data/*.json > $(PKG_BUILD_DIR)/devices.json
+  DEPENDS:=+ucode +ucode-mod-fs +libubox
 endef
 
 define Package/ufp/conffiles
 /etc/config/ufp
 endef
 
+define Host/Prepare
+	mkdir -p $(HOST_BUILD_DIR)
+	$(CP) ./src/* $(HOST_BUILD_DIR)/
+endef
+
 define Package/ufp/install
-	$(INSTALL_DIR) $(1)/usr/share/ufp
-	$(CP) $(PKG_BUILD_DIR)/devices.json $(1)/usr/share/ufp/
+	$(INSTALL_DIR) $(1)/usr/lib/ucode $(1)/usr/share/ufp
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/ucode/uht.so $(1)/usr/lib/ucode/
+	ucode ./scripts/convert-devices.uc $(1)/usr/share/ufp/devices.bin ./data/*.json
 	$(CP) ./files/* $(1)/
 endef
 
 $(eval $(call BuildPackage,ufp))
+$(eval $(call HostBuild))

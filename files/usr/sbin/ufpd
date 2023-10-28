@@ -3,11 +3,13 @@
 import * as uloop from "uloop";
 import * as libubus from "ubus";
 import { readfile, glob, basename } from "fs";
+let uht = require("uht");
 push(REQUIRE_SEARCH_PATH, "/usr/share/ufp/*.uc");
 
 uloop.init();
 let ubus = libubus.connect();
 let fingerprints = {};
+let fingerprint_ht;
 let devices = {};
 let gc_timer;
 let weight = {
@@ -25,6 +27,24 @@ function get_weight(type) {
 	type = join("-", type);
 
 	return weight[type];
+}
+
+
+function match_fingerprint(key)
+{
+	let fp, user_fp;
+
+	if (fingerprint_ht)
+		fp = fingerprint_ht.get(null, key);
+	user_fp = fingerprints[key];
+
+	if (fp && user_fp) {
+		fp = slice(fp);
+		for (entry in user_fp)
+			push(fp, entry);
+	}
+
+	return fp ?? user_fp;
 }
 
 let global = {
@@ -143,7 +163,7 @@ function __device_match_list(mac)
 	let match_devs = [];
 
 	for (let fp in data) {
-		let match = fingerprints[data[fp]];
+		let match = match_fingerprint(data[fp]);
 		if (!match)
 			continue;
 
@@ -347,8 +367,9 @@ global.ubus_object = {
 };
 
 try {
-	global.load_fingerprint_json("/usr/share/ufp/devices.json");
+	fingerprint_ht = uht.open("/usr/share/ufp/devices.bin");
 } catch (e) {
+	warn(`Failed to load fingerprints: ${e}\n${e.stacktrace[0].context}\n`);
 }
 load_plugins();
 ubus.publish("fingerprint", global.ubus_object);

@@ -1,6 +1,7 @@
 #!/usr/bin/env ucode
 'use strict';
-import { readfile } from "fs";
+import { readfile, basename } from "fs";
+let uht = require("uht");
 
 let signatures = {};
 
@@ -33,6 +34,12 @@ function get_device(meta, name)
 	return dev;
 }
 
+let out = shift(ARGV);
+if (!out) {
+	warn(`Syntax: ${basename(sourcepath())} <output> <jsonfile> [<jsonfile> ...]\n`);
+	exit(1);
+}
+
 for (let file in ARGV) {
 	let data = json(readfile(file));
 	for (let category_str in data) {
@@ -47,4 +54,5 @@ for (let file in ARGV) {
 	}
 }
 
-printf("%.J\n", signatures);
+uht.mark_hashtable(signatures);
+uht.save(out, signatures);
