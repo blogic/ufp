@@ -79,7 +79,6 @@ function dhcp_cb(msg) {
 		return;
 
 	let macaddr = parse_macaddr(substr(packet, 28 * 2, 12));
-	let fingerprints = {};
 
 	opts = dhcp_opt_parser(opts);
 	opts.foreach((data) => {
