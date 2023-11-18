@@ -15,6 +15,7 @@ PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 HOST_BUILD_DEPENDS:=ucode/host libubox/host
 PKG_BUILD_DEPENDS:=bpf-headers ufp/host
+UCODE:=LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(STAGING_DIR_HOSTPKG)/lib/:$(STAGING_DIR_HOST)/lib/ $(STAGING_DIR_HOSTPKG)/bin/ucode
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
@@ -39,7 +40,7 @@ endef
 define Package/ufp/install
 	$(INSTALL_DIR) $(1)/usr/lib/ucode $(1)/usr/share/ufp
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/ucode/uht.so $(1)/usr/lib/ucode/
-	ucode ./scripts/convert-devices.uc $(1)/usr/share/ufp/devices.bin ./data/*.json
+	$(UCODE) ./scripts/convert-devices.uc $(1)/usr/share/ufp/devices.bin ./data/*.json
 	$(CP) ./files/* $(1)/
 endef
 
