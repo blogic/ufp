@@ -9,7 +9,7 @@ push(REQUIRE_SEARCH_PATH, "/usr/share/ufp/*.uc");
 uloop.init();
 let ubus = libubus.connect();
 let fingerprints = {};
-let fingerprint_ht;
+let fingerprint_ht = [];
 let devices = {};
 let gc_timer;
 let weight = {
@@ -29,22 +29,22 @@ function get_weight(type) {
 	return weight[type];
 }
 
-
 function match_fingerprint(key)
 {
-	let fp, user_fp;
+	let fp = [];
 
-	if (fingerprint_ht)
-		fp = fingerprint_ht.get(null, key);
-	user_fp = fingerprints[key];
-
-	if (fp && user_fp) {
-		fp = slice(fp);
-		for (entry in user_fp)
-			push(fp, entry);
+	for (let ht in fingerprint_ht) {
+		let cur_fp = ht.get(null, key);
+		if (!cur_fp)
+			continue;
+		push(fp, ...cur_fp);
 	}
 
-	return fp ?? user_fp;
+	let user_fp = fingerprints[key];
+	if (user_fp)
+		push(fp, ...user_fp);
+
+	return fp;
 }
 
 let global = {
@@ -164,9 +164,6 @@ function __device_match_list(mac)
 
 	for (let fp in data) {
 		let match = match_fingerprint(data[fp]);
-		if (!match)
-			continue;
-
 		for (let match_cur in match)
 			push(match_devs, [ match_cur, global.get_weight(fp), fp ]);
 	}
@@ -366,10 +363,16 @@ global.ubus_object = {
 	},
 };
 
-try {
-	fingerprint_ht = uht.open("/usr/share/ufp/devices.bin");
-} catch (e) {
-	warn(`Failed to load fingerprints: ${e}\n${e.stacktrace[0].context}\n`);
+for (let f in [ "/usr/share/ufp/devices.bin", glob("/usr/share/ufp/db/*.bin") ]) {
+	let ht;
+	try {
+		ht = uht.open(f);
+	} catch (e) {
+		warn(`Failed to load fingerprints: ${e}\n${e.stacktrace[0].context}\n`);
+	}
+	if (!ht)
+		continue;
+	push(fingerprint_ht, ht);
 }
 load_plugins();
 ubus.publish("fingerprint", global.ubus_object);
