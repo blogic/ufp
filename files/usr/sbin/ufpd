@@ -2,12 +2,14 @@
 'use strict';
 import * as uloop from "uloop";
 import * as libubus from "ubus";
+import * as unetmsg from "unetmsg.client";
 import { readfile, glob, basename } from "fs";
 let uht = require("uht");
 push(REQUIRE_SEARCH_PATH, "/usr/share/ufp/*.uc");
 
 uloop.init();
 let ubus = libubus.connect();
+let unet = unetmsg.open(ubus);
 let fingerprints = {};
 let fingerprint_ht = [];
 let devices = {};
@@ -45,6 +47,56 @@ function match_fingerprint(key)
 		push(fp, ...user_fp);
 
 	return fp;
+}
+
+unet.publish("ufp", (req) => {
+	let data = req.args;
+	switch (data.type) {
+	case "get_data":
+		let mac = data.macaddr;
+		if (mac)
+			return { data: devices[mac] };
+		return { data: devices };
+	}
+});
+unet.subscribe("ufp");
+
+function dev_timestamp_cmp(a, b)
+{
+	return a[1].timestamp - b[1].timestamp;
+}
+
+function network_devices() {
+	let device_lists = [
+		devices
+	];
+
+	unet.request("ufp", "get_data", {}, (msg) => {
+		push(device_lists, msg.data);
+	});
+
+	let cur_devices = [];
+	for (let list in device_lists)
+		for (let mac, dev in list)
+			push(cur_devices, [ mac, dev ]);
+
+	let ret = {};
+	sort(cur_devices, dev_timestamp_cmp);
+	for (let entry in cur_devices) {
+		let mac = entry[0];
+		let data = entry[1];
+		if (!ret[mac]) {
+			ret[mac] = data;
+			continue;
+		}
+
+		let new_data = { ...data };
+		new_data.data = { ...ret[mac].data, ...data.data };
+		new_data.meta = { ...ret[mac].meta, ...data.meta };
+		ret[mac] = new_data;
+	}
+
+	return ret;
 }
 
 let global = {
@@ -152,7 +204,7 @@ function device_gc()
 }
 
 // returns: { "<meta>": { "<val>": [ <weight>, [ <fingerprints> ] ] } }
-function __device_match_list(mac)
+function __device_match_list(mac, devices)
 {
 	let dev = devices[mac];
 	if (!dev || !length(dev))
@@ -224,9 +276,9 @@ function __device_match_list(mac)
 	return ret;
 }
 
-function device_match_list(mac)
+function device_match_list(mac, devices)
 {
-	let match = __device_match_list(mac);
+	let match = __device_match_list(mac, devices);
 
 	for (let meta in match) {
 		let match_meta = match[meta];
@@ -305,11 +357,12 @@ global.ubus_object = {
 		call: function(req) {
 			refresh_plugins();
 
-			let mac_list = req.args.macaddr ? [ req.args.macaddr ] : keys(devices);
+			let cur_devices = network_devices();
+			let mac_list = req.args.macaddr ? [ req.args.macaddr ] : keys(cur_devices);
 			let ret = {};
 
 			for (let mac in mac_list) {
-				let match_list = device_match_list(mac);
+				let match_list = device_match_list(mac, cur_devices);
 				if (!match_list)
 					return libubus.STATUS_NOT_FOUND;
 
@@ -343,11 +396,12 @@ global.ubus_object = {
 		call: function(req) {
 			refresh_plugins();
 
-			let mac_list = req.args.macaddr ? [ req.args.macaddr ] : keys(devices);
+			let cur_devices = network_devices();
+			let mac_list = req.args.macaddr ? [ req.args.macaddr ] : keys(cur_devices);
 			let ret = {};
 
 			for (let mac in mac_list) {
-				let match_list = device_match_list(mac);
+				let match_list = device_match_list(mac, cur_devices);
 				if (!match_list)
 					return libubus.STATUS_NOT_FOUND;
 
