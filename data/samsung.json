@@ -1,7 +1,9 @@
 {
 	"vendor=%": {
 		"Samsung": [
-			"wifi-vendor-oui-0000f0|1"
+			"wifi-vendor-oui-0000f0|1",
+			"wifi-vendor-oui-000ce7|1",
+			"mac-oui-fa18bf|1"
 		]
 	},
 	"vendor=Samsung|class=phone": {
@@ -13,6 +15,11 @@
 	"vendor=Samsung|class=tablet": {
 		"Galaxy Tab A": [
 			"wifi4|0,1,36,33,45,48,54,127,191,199,221(0000f022),221(0050f202),htcap:016f,htagg:17,htmcs:000000ff,vhtcap:03007131,vhtrxmcs:0000fffe,vhttxmcs:0000fffe,txpow:1303,extcap:0400000000000040"
+		]
+	},
+	"vendor=Samsung|class=tablet": {
+		"Galaxy A7 Lite": [
+			"wifi4|0,1,33,36,48,70,59,45,127,191,244,221(0000f022),221(0050f202),221(000ce708),htcap:117e,htagg:03,htmcs:000000ff,vhtcap:03907120,vhtrxmcs:0000fffe,vhttxmcs:2000fffe,txpow:1408,extcap:02000a8200400040000120"
 		]
 	}
 }
