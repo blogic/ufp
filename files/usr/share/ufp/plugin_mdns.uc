@@ -174,6 +174,13 @@ function handle_fritzbox(txt)
 	return ret;
 }
 
+function handle_uconfig(txt)
+{
+	let ret = [];
+	push(ret, "%class|mdns_uconfig|uconfig");
+	return ret;
+}
+
 const service_handler = {
 	"_airplay._tcp": handle_apple,
 	"_companion-link._tcp": handle_apple,
@@ -186,6 +193,7 @@ const service_handler = {
 	"_hue._tcp": handle_hue,
 	"_fbox._tcp": handle_fritzbox,
 	"_avmnexus._tcp": handle_fritzbox,
+	"_uconfig._udp": handle_uconfig,
 };
 
 function arp_resolve(list)
@@ -292,6 +300,7 @@ function init(gl) {
 		mdns_printer: 5.0,
 		mdns_scanner: 1.0,
 		homekit_class: 2.0,
+		mdns_uconfig: 10.0,
 	});
 }
 
