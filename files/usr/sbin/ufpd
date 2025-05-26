@@ -363,7 +363,7 @@ global.ubus_object = {
 	},
 };
 
-for (let f in [ "/usr/share/ufp/devices.bin", glob("/usr/share/ufp/db/*.bin") ]) {
+for (let f in [ "/usr/share/ufp/devices.bin", ...glob("/usr/share/ufp/db/*.bin") ]) {
 	let ht;
 	try {
 		ht = uht.open(f);
