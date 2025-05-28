@@ -174,9 +174,10 @@ function handle_fritzbox(txt)
 	return ret;
 }
 
-function handle_uconfig(txt)
+function handle_uconfig(txt, host)
 {
 	let ret = [];
+	push(ret, `%device_name|mdns_device_name|${host}`);
 	push(ret, "%class|mdns_uconfig|uconfig");
 	return ret;
 }
@@ -299,7 +300,7 @@ function init(gl) {
 		mdns_model_string: 5.0,
 		mdns_printer: 5.0,
 		mdns_scanner: 1.0,
-		homekit_class: 2.0,
+		homekit_class: 10.0,
 		mdns_uconfig: 10.0,
 	});
 }
